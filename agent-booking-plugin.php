@@ -16,7 +16,21 @@
  * Requires Plugins:  
  */
 
-//require_once __DIR__ . '/includes/block.php';
+
+add_action( 'plugins_loaded', 'agent_booking_plugin_load_textdomain' );
+
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/agents.php';
+require_once __DIR__ . '/includes/cron.php';
+require_once __DIR__ . '/includes/routes.php';
+require_once __DIR__ . '/includes/shortcode.php';
+require_once __DIR__ . '/includes/widget.php';
+
+
+/**
+ * Register our wporg_settings_init to the admin_init action hook.
+ */
+add_action( 'admin_init', 'wporg_settings_init' );
 
 /**
  * custom option and settings
@@ -27,13 +41,8 @@ function wporg_settings_init() {
 }
 
 /**
- * Register our wporg_settings_init to the admin_init action hook.
+ * languages
  */
-add_action( 'admin_init', 'wporg_settings_init' );
-
-
-add_action( 'plugins_loaded', 'agent_booking_plugin_load_textdomain' );
-
 function agent_booking_plugin_load_textdomain() {
     load_plugin_textdomain(
         'agent-booking-plugin',
@@ -42,149 +51,45 @@ function agent_booking_plugin_load_textdomain() {
     );
 }
 
-function agent_booking_install() {
+add_action('admin_enqueue_scripts', function () {
+    wp_enqueue_script(
+        'fullcalendar',
+        'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js',
+        [],
+        null,
+        true
+    );
+	wp_enqueue_style(
+        'agent-booking-admin-style',
+        plugin_dir_url(__FILE__) . '/assets/css/admin.css?nocache=' . date("Ymd_His")
+    );
+});
 
-    global $wpdb;
-
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $table_name =
-        $wpdb->prefix . 'availability_slots';
-
-    $sql = "
-    CREATE TABLE $table_name (
-
-        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-
-        agent_id BIGINT UNSIGNED NOT NULL,
-
-        slot_start_utc DATETIME NOT NULL,
-        slot_end_utc DATETIME NOT NULL,
-
-        status VARCHAR(20) NOT NULL DEFAULT 'FREE',
-
-        max_bookings INT NOT NULL DEFAULT 1,
-
-        created_at DATETIME NOT NULL,
-        updated_at DATETIME NOT NULL,
-
-        PRIMARY KEY  (id),
-
-        KEY idx_agent_date (
-            agent_id,
-            slot_start_utc
-        ),
-
-        KEY idx_status (
-            status
-        )
-
-    ) $charset_collate;
-    ";
-
-		$table_name2 =
-        $wpdb->prefix . 'bookings';
-
-		$sql2 = "
-		CREATE TABLE $table_name2 (
-				id BIGINT UNSIGNED AUTO_INCREMENT,
-
-				slot_id BIGINT UNSIGNED NOT NULL,
-
-				customer_name VARCHAR(255) NOT NULL,
-				customer_email VARCHAR(255) NOT NULL,
-				customer_phone VARCHAR(100),
-
-				notes TEXT,
-
-				status ENUM(
-						'PENDING',
-						'CONFIRMED',
-						'CANCELLED',
-						'NOSHOW'
-				) NOT NULL DEFAULT 'CONFIRMED',
-
-				created_at DATETIME NOT NULL,
-				updated_at DATETIME NOT NULL,
-				
-				PRIMARY KEY  (id),
-
-				KEY idx_slot (
-						slot_id
-				),
-
-				KEY idx_customer_email (
-						customer_email
-				)
-		) $charset_collate
-		";
-
-
-		$table_name3 =
-        $wpdb->prefix . 'agent_weekly_rules';
-
-		$sql3 = "
-		CREATE TABLE $table_name3 (
-				id BIGINT UNSIGNED AUTO_INCREMENT,
-
-				agent_id BIGINT UNSIGNED NOT NULL,
-
-				weekday TINYINT NOT NULL,
-
-				start_time TIME NOT NULL,
-				end_time TIME NOT NULL,
-
-				slot_duration_minutes INT NOT NULL DEFAULT 30,
-
-				is_active TINYINT(1) NOT NULL DEFAULT 1,
-
-				created_at DATETIME NOT NULL,
-				updated_at DATETIME NOT NULL,
-
-				PRIMARY KEY  (id),
-
-				KEY idx_agent_weekday (
-						agent_id,
-						weekday
-				)
-		) $charset_collate
-		";
-
-		$table_name4 =
-        $wpdb->prefix . 'agent_days_off';
-		$sql4 = "
-		CREATE TABLE $table_name4 (
-				id BIGINT UNSIGNED AUTO_INCREMENT,
-
-				agent_id BIGINT UNSIGNED NOT NULL,
-
-				off_start_utc DATETIME NOT NULL,
-				off_end_utc DATETIME NOT NULL,
-
-				reason VARCHAR(255),
-
-				created_at DATETIME NOT NULL,
-
-				PRIMARY KEY  (id),
-
-				KEY idx_agent_off (
-						agent_id,
-						off_start_utc
-				)
-		) $charset_collate
-		";
-
-    require_once(
-        ABSPATH . 'wp-admin/includes/upgrade.php'
+add_action('wp_enqueue_scripts', function () {
+    wp_enqueue_script(
+        'fullcalendar',
+        'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js',
+        [],
+        null,
+        true
+    );
+    wp_enqueue_script(
+        'agent-calendar-js',
+        plugin_dir_url(__FILE__) . '/assets/js/calendar.js?nocache=' . date("Ymd_His"),
+        ['jquery'],
+        '1.0',
+        true
+    );
+    wp_enqueue_script(
+        'agent-booking-js',
+        plugin_dir_url(__FILE__) . '/assets/js/booking.js?nocache=' . date("Ymd_His"),
+        ['jquery'],
+        '1.0',
+        true
     );
 
-    dbDelta($sql);
-    dbDelta($sql2);
-    dbDelta($sql3);
-    dbDelta($sql4);
-}
-
-register_activation_hook(
-    __FILE__,
-    'agent_booking_install'
-);
+	wp_enqueue_style(
+        'agent-booking-style',
+        plugin_dir_url(__FILE__) . '/assets/css/style.css?nocache=' . date("Ymd_His")
+    );
+});

@@ -22,7 +22,9 @@ add_action( 'plugins_loaded', 'agent_booking_plugin_load_textdomain' );
 require_once __DIR__ . '/includes/shortcode.php';
 require_once __DIR__ . '/includes/widget.php';
 require_once __DIR__ . '/includes/routes.php';
+require_once plugin_dir_path(__FILE__) . 'includes/roles.php';
 require_once plugin_dir_path(__FILE__) . 'includes/db.php';
+require_once __DIR__ . '/includes/admin.php';
 require_once __DIR__ . '/includes/agents.php';
 require_once __DIR__ . '/includes/cron.php';
 

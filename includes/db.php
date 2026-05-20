@@ -5,7 +5,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define('AGENT_BOOKING_DB_VERSION', '1.0');
+
 function agent_booking_install() {
+
+    agent_booking_create_roles();
+
+    agent_booking_create_tables();
+}
+function agent_booking_create_tables() {
 
     global $wpdb;
 

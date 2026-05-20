@@ -5,15 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define('AGENT_BOOKING_DB_VERSION', '1.0');
-update_option(
-    'agent_booking_db_version',
-    AGENT_BOOKING_DB_VERSION
-);
-
-register_activation_hook(
-    __FILE__,
-    'agent_booking_install'
-);
 function agent_booking_install() {
 
     global $wpdb;
@@ -21,7 +12,8 @@ function agent_booking_install() {
     $charset_collate = $wpdb->get_charset_collate();
 
     $table_name =
-        $wpdb->prefix . 'availability_slots';
+        $wpdb->prefix . 'agent_booking_slots';
+
 
     $sql = "
     CREATE TABLE $table_name (
@@ -35,7 +27,7 @@ function agent_booking_install() {
 
         status VARCHAR(20) NOT NULL DEFAULT 'FREE',
 
-        max_bookings INT NOT NULL DEFAULT 1,
+        max_bookings INT UNSIGNED NOT NULL DEFAULT 1,
 
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
@@ -51,7 +43,7 @@ function agent_booking_install() {
             status
         )
 
-    ) $charset_collate;
+    ) $charset_collate ;
     ";
 
 		$table_name2 =
@@ -69,12 +61,7 @@ function agent_booking_install() {
 
 				notes TEXT,
 
-				status ENUM(
-						'PENDING',
-						'CONFIRMED',
-						'CANCELLED',
-						'NOSHOW'
-				) NOT NULL DEFAULT 'CONFIRMED',
+				status VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
 
 				created_at DATETIME NOT NULL,
 				updated_at DATETIME NOT NULL,
@@ -88,12 +75,19 @@ function agent_booking_install() {
 				KEY idx_customer_email (
 						customer_email
 				)
-		) $charset_collate
+		) $charset_collate ;
 		";
 
 
 		$table_name3 =
         $wpdb->prefix . 'agent_weekly_rules';
+
+		/**
+		 * Weekday
+		 * 
+		 * 1 = Monday
+		 * 7 = Sunday
+		 */
 
 		$sql3 = "
 		CREATE TABLE $table_name3 (
@@ -102,11 +96,11 @@ function agent_booking_install() {
 				agent_id BIGINT UNSIGNED NOT NULL,
 
 				weekday TINYINT NOT NULL,
-
+				
 				start_time TIME NOT NULL,
 				end_time TIME NOT NULL,
 
-				slot_duration_minutes INT NOT NULL DEFAULT 30,
+				slot_duration_minutes INT UNSIGNED NOT NULL DEFAULT 30,
 
 				is_active TINYINT(1) NOT NULL DEFAULT 1,
 
@@ -119,7 +113,7 @@ function agent_booking_install() {
 						agent_id,
 						weekday
 				)
-		) $charset_collate
+		) $charset_collate ;
 		";
 
 		$table_name4 =
@@ -143,7 +137,7 @@ function agent_booking_install() {
 						agent_id,
 						off_start_utc
 				)
-		) $charset_collate
+		) $charset_collate ;
 		";
 
     require_once(
@@ -154,4 +148,9 @@ function agent_booking_install() {
     dbDelta($sql2);
     dbDelta($sql3);
     dbDelta($sql4);
+
+    update_option(
+        'agent_booking_db_version',
+        AGENT_BOOKING_DB_VERSION
+    );
 }

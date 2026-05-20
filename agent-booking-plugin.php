@@ -19,13 +19,21 @@
 
 add_action( 'plugins_loaded', 'agent_booking_plugin_load_textdomain' );
 
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/agents.php';
-require_once __DIR__ . '/includes/cron.php';
-require_once __DIR__ . '/includes/routes.php';
 require_once __DIR__ . '/includes/shortcode.php';
 require_once __DIR__ . '/includes/widget.php';
+require_once __DIR__ . '/includes/routes.php';
+require_once plugin_dir_path(__FILE__) . 'includes/db.php';
+require_once __DIR__ . '/includes/agents.php';
+require_once __DIR__ . '/includes/cron.php';
 
+
+/**
+ * Activation hook.
+ */
+register_activation_hook(
+    __FILE__,
+    'agent_booking_install'
+);
 
 /**
  * Register our wporg_settings_init to the admin_init action hook.
@@ -50,46 +58,3 @@ function agent_booking_plugin_load_textdomain() {
         dirname( plugin_basename( __FILE__ ) ) . '/languages'
     );
 }
-
-add_action('admin_enqueue_scripts', function () {
-    wp_enqueue_script(
-        'fullcalendar',
-        'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js',
-        [],
-        null,
-        true
-    );
-	wp_enqueue_style(
-        'agent-booking-admin-style',
-        plugin_dir_url(__FILE__) . '/assets/css/admin.css?nocache=' . date("Ymd_His")
-    );
-});
-
-add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_script(
-        'fullcalendar',
-        'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js',
-        [],
-        null,
-        true
-    );
-    wp_enqueue_script(
-        'agent-calendar-js',
-        plugin_dir_url(__FILE__) . '/assets/js/calendar.js?nocache=' . date("Ymd_His"),
-        ['jquery'],
-        '1.0',
-        true
-    );
-    wp_enqueue_script(
-        'agent-booking-js',
-        plugin_dir_url(__FILE__) . '/assets/js/booking.js?nocache=' . date("Ymd_His"),
-        ['jquery'],
-        '1.0',
-        true
-    );
-
-	wp_enqueue_style(
-        'agent-booking-style',
-        plugin_dir_url(__FILE__) . '/assets/css/style.css?nocache=' . date("Ymd_His")
-    );
-});

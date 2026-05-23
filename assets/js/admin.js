@@ -1,10 +1,12 @@
 
 document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('agent-booking-admin-calendar');
-        const agentCalendarView = document.getElementById('agent-calendar-view').value;
         var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: agentCalendarView, //'timeGridWeek',
+          initialView: 'timeGridWeek',
           locale: 'hu',
+          headerToolbar: {
+              center: 'dayGridMonth,timeGridWeek,dayGridDay' // buttons for switching between views
+          },
           eventTimeFormat: {
               hour: '2-digit',
               minute: '2-digit',
@@ -125,9 +127,4 @@ function getSlotColor(status) {
 
 function refreshCalendar() {
     window.agentBookingCalendar.refetchEvents();
-}
-
-function refreshCalendarView() {
-    const agentCalendarView = document.getElementById('agent-calendar-view').value;
-    window.agentBookingCalendar.changeView(agentCalendarView);
 }

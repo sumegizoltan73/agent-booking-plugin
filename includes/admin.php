@@ -77,18 +77,6 @@ function agent_booking_admin_page() {
             <?php endforeach; ?>
         </select>
 
-        <select id="agent-calendar-view" onchange="refreshCalendarView()">
-            <option
-                value="timeGridWeek"
-            >
-                Heti nézet
-            </option>
-            <option
-                value="dayGridMonth"
-            >
-                Havi nézet
-            </option>
-        </select>
         <div id="agent-booking-admin-calendar"></div>
 
     </div>

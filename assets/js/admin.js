@@ -78,6 +78,38 @@ async function generateSlots() {
     console.log(data);
 }
 
+async function generateUniqueSlots(agent, 
+    range,
+    from,
+    to,
+    duration) {
+    const url = agentBooking.restUrl + 'generate-unique-slots';
+    const agentId = document.getElementById('agent-id').value;
+    const response = await fetch(
+        url,
+        {
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': agentBooking.nonce
+            },
+
+            body: JSON.stringify({
+                agent_id: agent, 
+                range,
+                from,
+                to,
+                duration
+            })
+        }
+    );
+
+    const data = await response.json();
+    window.agentBookingCalendar.refetchEvents();
+    console.log(data);
+}
+
 async function generateUniqueSlotsPopUp() {
     const agent_select_html = document.getElementById('agent-id').innerHTML;
 
@@ -146,6 +178,11 @@ async function generateUniqueSlotsPopUp() {
     const [agent, range, from, to, duration, isValid] = formValues;
     if (isValid) { 
         // generate
+        generateUniqueSlots(agent, 
+            range,
+            from,
+            to,
+            duration);
     }
     else {
         Swal.fire({

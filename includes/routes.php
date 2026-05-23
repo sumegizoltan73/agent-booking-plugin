@@ -30,6 +30,23 @@ function agent_booking_register_routes() {
 
     register_rest_route(
         'agent-booking/v1',
+        '/generate-unique-slots',
+        [
+            'methods'  => 'POST',
+
+            'callback' => 'agent_booking_generate_unique_slots',
+
+            'permission_callback' => function () {
+
+                return current_user_can(
+                    'manage_options'
+                );
+            }
+        ]
+    );
+
+    register_rest_route(
+        'agent-booking/v1',
         '/calendar-events',
         [
             'methods'  => 'GET',

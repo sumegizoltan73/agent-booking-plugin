@@ -32,6 +32,9 @@ function agent_booking_generate_slots(
             }
         }
     }
+    else {
+        $agents[] = $agent_id;
+    }
 
     $start_date = new DateTime('today');
 
@@ -106,7 +109,152 @@ function agent_booking_generate_slots(
     ];
 }
 
+function agent_booking_generate_unique_slots(
+    WP_REST_Request $request
+) {
 
+    global $wpdb;
+
+    $table =
+        $wpdb->prefix . 'agent_booking_slots';
+    $params = $request->get_json_params();
+
+    $agents = [];
+    $agent_id = intval($params['agent_id']);
+    if ($agent_id == 0 && !class_exists('Groups_User')) {
+        $agents[] = 1;
+    }
+    if ($agent_id == 0 && class_exists('Groups_User')) {
+        $users = get_users();
+        foreach ($users as $user) {
+            $group_user = new Groups_User($user->ID);
+            foreach ($group_user->__get('groups') as $group) {
+                if ($group->name == 'booking_agent') {
+                    $agents[] = $user->ID;
+                    break;
+                }
+            }
+        }
+    }
+    else {
+        $agents[] = $agent_id;
+    }
+
+    $range = explode(" - ", $params['range']);
+    
+    $start_date = new DateTime(
+        trim($range[0]),
+        new DateTimeZone('UTC')
+    );
+    $end_date = new DateTime(
+        trim($range[1]),
+        new DateTimeZone('UTC')
+    );
+    $diff = date_diff($start_date, $end_date);
+    $days = intval($diff->format("%a"));
+
+    $start_time = explode(":", $params['from']);
+    $end_time = explode(":", $params['to']);
+    $start_hour = intval($start_time[0]);
+    $end_hour = intval($end_time[0]);
+
+    $duration = intval($params['duration']);
+
+    foreach ($agents as $agentId) {
+        // Delete all FREE slots within the interval
+        $wpdb->query(
+            $wpdb->prepare(
+                "
+                DELETE FROM {$table}
+
+                WHERE
+                    agent_id = %d
+
+                    AND status = 'FREE'
+
+                    AND slot_start_utc >= %s
+
+                    AND slot_start_utc <= %s
+                ",
+                $agentId,
+                $start_date->format('Y-m-d 00:00:00'),
+                $end_date->format('Y-m-d 23:59:59')
+            )
+        );
+
+        // Create new slots with FREE state
+        for ($d = 0; $d <= $days; $d++) {
+
+            $date = clone $start_date;
+
+            $date->modify("+{$d} day");
+
+            for ($hour = $start_hour; $hour < $end_hour; $hour++) {
+
+                for (
+                    $minute = 0;
+                    $minute < 60;
+                    $minute += $duration
+                ) {
+
+                    $slot_start = clone $date;
+
+                    $slot_start->setTime(
+                        $hour,
+                        $minute
+                    );
+
+                    $slot_end = clone $slot_start;
+
+                    $slot_end->modify('+' . $duration . ' minutes');
+
+                    $wpdb->query(
+                        $wpdb->prepare(
+                            "
+                            INSERT IGNORE INTO {$table}
+                            (
+                                agent_id,
+                                slot_start_utc,
+                                slot_end_utc,
+                                status,
+                                max_bookings,
+                                created_at,
+                                updated_at
+                            )
+
+                            VALUES (
+                                %d,
+                                %s,
+                                %s,
+                                %s,
+                                %d,
+                                NOW(),
+                                NOW()
+                            )
+                            ",
+                            [
+                                $agentId,
+                                $slot_start->format(
+                                    'Y-m-d H:i:s'
+                                ),
+                                $slot_end->format(
+                                    'Y-m-d H:i:s'
+                                ),
+                                'FREE',
+                                1
+                            ]
+                        )
+                    );
+                    
+                }
+            }
+        }
+    }
+    return [
+        'success' => true,
+        'message' => 'Unique Slot generation completed'
+    ];
+}
 function agent_booking_get_slot_color(
     $status
 ) {
@@ -149,9 +297,6 @@ function agent_booking_calendar_events(
         )
     );
 
-    error_log(
-        'agent_id: ' . $agent_id
-    );
     $result = $wpdb->get_results(
         $wpdb->prepare(
             "

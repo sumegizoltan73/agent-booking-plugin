@@ -78,6 +78,84 @@ async function generateSlots() {
     console.log(data);
 }
 
+async function generateUniqueSlotsPopUp() {
+    const agent_select_html = document.getElementById('agent-id').innerHTML;
+
+    const { value: formValues } = await Swal.fire({
+
+        title: 'Slot generálás',
+
+        html: `
+            <select id="agent-id-for-slot-generate">
+                ${agent_select_html}
+            </select>
+            <input
+                id="slot-date-range"
+                class="swal2-input"
+            />
+
+            <input
+                id="time-from"
+                type="time"
+                class="swal2-input"
+            />
+
+            <input
+                id="time-to"
+                type="time"
+                class="swal2-input"
+            />
+
+            <select id="slot-duration">
+                <option value="15">15 perc</option>
+                <option value="30">30 perc</option>
+                <option value="60">60 perc</option>
+            </select>
+        `,
+
+        showCancelButton: true,
+        allowEscapeKey: true,
+        preConfirm: () => {
+            const agent = document.getElementById("agent-id-for-slot-generate").value;
+            const range = document.getElementById("slot-date-range").value;
+            const from = document.getElementById("time-from").value;
+            const to = document.getElementById("time-to").value;
+            const duration = document.getElementById("slot-duration").value;
+
+            const isValid = (range && from && to && from.length === 5 && to.length === 5);
+            return [
+                agent, 
+                range,
+                from,
+                to,
+                duration,
+                isValid
+            ]
+        },
+        didOpen: () => {
+
+            jQuery('#slot-date-range')
+                .daterangepicker({
+                    locale: {
+                        format: 'YYYY-MM-DD'
+                    }
+                });
+        }
+    });
+
+    const [agent, range, from, to, duration, isValid] = formValues;
+    if (isValid) { 
+        // generate
+    }
+    else {
+        Swal.fire({
+            title: 'Hiba!',
+            text: 'Minden mezőt töltsön ki!',
+            icon: 'error'
+        });
+    }
+}
+
 async function updateSlot(id, status) {
 
     const url =

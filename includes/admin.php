@@ -77,6 +77,10 @@ function agent_booking_admin_page() {
             <?php endforeach; ?>
         </select>
 
+        <button id="generate-unique-slots" onclick="generateUniqueSlotsPopUp()">
+            Egyedi Slotok generálása
+        </button>
+
         <div id="agent-booking-admin-calendar"></div>
 
     </div>
@@ -117,6 +121,27 @@ function agent_booking_admin_assets($hook) {
         [],
         '11',
         true
+    );
+
+    wp_enqueue_script(
+        'momentjs',
+        'https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js',
+        [],
+        '2.30.1',
+        true
+    );
+    wp_enqueue_script(
+        'daterangepicker',
+        'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js',
+        ['jquery', 'momentjs'],
+        '3.1',
+        true
+    );
+    wp_enqueue_style(
+        'daterangepicker-style',
+        'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
+        [],
+        '3.1'
     );
 
     wp_enqueue_script(

@@ -72,4 +72,19 @@ function agent_booking_register_routes() {
             }
         ]
     );
+
+    register_rest_route(
+        'agent-booking/v1',
+        '/booking-slot',
+        [
+            'methods'  => 'POST',
+
+            'callback' => 'agent_booking_slot',
+
+            'permission_callback' => function () {
+
+                return true;
+            }
+        ]
+    );
 }

@@ -40,8 +40,45 @@ function agent_booking_enqueue_assets() {
     );
 
     wp_enqueue_script(
+        'fullcalendar-locales',
+        plugin_dir_url(__FILE__) . '../assets/vendor/fullcalendar/locales-all.global.min.js',
+        ['fullcalendar'],
+        '6.1.20',
+        true
+    );
+
+    wp_enqueue_script(
+        'sweetalert2',
+        'https://cdn.jsdelivr.net/npm/sweetalert2@11',
+        [],
+        '11',
+        true
+    );
+
+    wp_enqueue_script(
+        'momentjs',
+        'https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js',
+        [],
+        '2.30.1',
+        true
+    );
+    wp_enqueue_script(
+        'daterangepicker',
+        'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js',
+        ['jquery', 'momentjs'],
+        '3.1',
+        true
+    );
+    wp_enqueue_style(
+        'daterangepicker-style',
+        'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
+        [],
+        '3.1'
+    );
+
+    wp_enqueue_script(
         'agent-calendar-js',
-        plugin_dir_url(__FILE__) . '../assets/js/calendar.js',
+        plugin_dir_url(__FILE__) . '../assets/js/calendar.js?nocache=' . date("Ymd_His"),
         ['fullcalendar'],
         filemtime(
             plugin_dir_path(__FILE__) .
@@ -52,7 +89,7 @@ function agent_booking_enqueue_assets() {
 
     wp_enqueue_script(
         'agent-booking-js',
-        plugin_dir_url(__FILE__) . '../assets/js/booking.js',
+        plugin_dir_url(__FILE__) . '../assets/js/booking.js?nocache=' . date("Ymd_His"),
         ['agent-calendar-js'],
         filemtime(
             plugin_dir_path(__FILE__) .
@@ -63,9 +100,30 @@ function agent_booking_enqueue_assets() {
 
     wp_enqueue_style(
         'agent-booking-style',
-        plugin_dir_url(__FILE__) . '../assets/css/style.css',
+        plugin_dir_url(__FILE__) . '../assets/css/style.css?nocache=' . date("Ymd_His"),
         [],
         '1.0'
+    );
+
+    wp_localize_script(
+        'agent-booking-js',
+        'agentBooking',
+        [
+            'nonce' => wp_create_nonce('wp_rest'),
+            'restUrl' => rest_url(
+                'agent-booking/v1/'
+            )
+        ]
+    );
+    wp_localize_script(
+        'agent-calendar-js',
+        'agentBooking',
+        [
+            'nonce' => wp_create_nonce('wp_rest'),
+            'restUrl' => rest_url(
+                'agent-booking/v1/'
+            )
+        ]
     );
 }
 

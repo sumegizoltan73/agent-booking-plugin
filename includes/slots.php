@@ -290,6 +290,8 @@ function agent_booking_calendar_events(
         $wpdb->prefix . 'agent_booking_slots';
     $usertable =
         $wpdb->prefix . 'users';
+    $table_bookings =
+        $wpdb->prefix . 'agent_booking_bookings';
 
     $agent_id = intval(
         $request->get_param(
@@ -301,28 +303,32 @@ function agent_booking_calendar_events(
         $wpdb->prepare(
             "
             SELECT
-                b.*,
-                u.display_name
+                s.*,
+                u.display_name,
+                CASE WHEN b.slot_id IS NOT NULL AND s.status = 'FREE' THEN 'BOOKED' ELSE s.status END as state
 
             FROM
-                {$table} b
+                {$table} s
 
             JOIN
                 {$usertable} u
-                ON u.ID = b.agent_id
+                ON u.ID = s.agent_id
+            LEFT JOIN
+                $table_bookings b 
+                ON b.slot_id = s.id
 
             WHERE
-                b.slot_start_utc >= CURDATE()
+                s.slot_start_utc >= CURDATE()
 
                 AND (
                     %d = 0
                     OR
-                    b.agent_id = %d
+                    s.agent_id = %d
                 )
 
             ORDER BY
-                b.slot_start_utc,
-                b.agent_id
+                s.slot_start_utc,
+                s.agent_id
             ",
             $agent_id,
             $agent_id
@@ -340,12 +346,12 @@ function agent_booking_calendar_events(
             'end' => $row->slot_end_utc,
 
             'color' => agent_booking_get_slot_color(
-                $row->status
+                $row->state
             ),
 
             'extendedProps' => [
                 'slot_id' => $row->id,
-                'status' => $row->status,
+                'status' => $row->state,
                 'name' => $row->display_name
             ]
         ];
@@ -372,13 +378,78 @@ function agent_booking_update_slot_status(
             $params['status']
         );
 
+    if ($status == 'FREE' || $status == 'BLOCKED') {
+        $wpdb->query(
+            "
+            UPDATE {$table}
+            SET status = '{$status}'
+            WHERE id = {$id}
+            "
+        );
+
+        return [
+            'success' => true,
+            'message' => 'Slot update complet'
+        ];
+    }
+    else {
+        return [
+            'success' => false,
+            'message' => 'Slot update unfinished'
+        ];
+    }
+}
+
+function agent_booking_slot(
+    WP_REST_Request $request
+) {
+
+    global $wpdb;
+
+    $table =
+        $wpdb->prefix . 'agent_booking_slots';
+    $table_bookings =
+        $wpdb->prefix . 'agent_booking_bookings';
+    $table_notes =
+        $wpdb->prefix . 'agent_booking_notes';
+    $params =
+        $request->get_json_params();
+
+    $id = intval($params['id']);
+    $email = sanitize_text_field(
+            $params['email']
+        );
+    $name = sanitize_text_field(
+            $params['name']
+        );
+    $phone = sanitize_text_field(
+            $params['phone']
+        );
+    $notes = sanitize_text_field(
+            $params['notes']
+        );
+    //$created_id = wp_users.id;
+
+
     $wpdb->query(
         "
-        UPDATE {$table}
-        SET status = '{$status}'
-        WHERE id = {$id}
+        INSERT INTO {$table_bookings} 
+        (slot_id, customer_email, customer_name, customer_phone, created_by, created_at)
+        SELECT id as slot_id, '{$email}' as customer_email, '{$name}' as customer_name, '{$phone}' as customer_phone, NULL as created_by, NOW() as created_at 
+        FROM {$table} s
+        WHERE s.id = {$id} AND s.status = 'FREE' AND NOT EXISTS (
+            SELECT slot_id FROM {$table_bookings} b WHERE b.slot_id = s.id
+        )
         "
     );
+
+    if ($notes != "") {
+        $wpdb->query(
+            "
+            
+            "
+        );
+    }
 
     return [
         'success' => true,

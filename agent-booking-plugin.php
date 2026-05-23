@@ -3,7 +3,7 @@
  * Plugin Name:       Agent Booking Plugin
  * Plugin URI:        https://github.com/sumegizoltan73/agent-booking-plugin
  * Description:       Agent booking with WordPress plugin.
- * Version:           0.1.0
+ * Version:           0.1.2
  * Requires at least: 5.2
  * Requires PHP:      7.2
  * Author:            Zoltan Peter Sumegi & ChatGPT
@@ -21,6 +21,7 @@ add_action( 'plugins_loaded', 'agent_booking_plugin_load_textdomain' );
 
 require_once __DIR__ . '/includes/shortcode.php';
 require_once __DIR__ . '/includes/widget.php';
+require_once __DIR__ . '/includes/slots.php';
 require_once __DIR__ . '/includes/routes.php';
 require_once plugin_dir_path(__FILE__) . 'includes/roles.php';
 require_once plugin_dir_path(__FILE__) . 'includes/db.php';
@@ -35,6 +36,10 @@ require_once __DIR__ . '/includes/cron.php';
 register_activation_hook(
     __FILE__,
     'agent_booking_install'
+);
+add_action(
+    'plugins_loaded',
+    'agent_booking_update_db_check'
 );
 
 /**

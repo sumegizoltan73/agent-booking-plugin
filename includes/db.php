@@ -4,13 +4,29 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define('AGENT_BOOKING_DB_VERSION', '1.0');
+define('AGENT_BOOKING_DB_VERSION', '1.4');
 
 function agent_booking_install() {
 
     agent_booking_create_roles();
 
     agent_booking_create_tables();
+}
+
+function agent_booking_update_db_check() {
+
+    $installed_version =
+        get_option(
+            'agent_booking_db_version'
+        );
+
+    if (
+        $installed_version !==
+        AGENT_BOOKING_DB_VERSION
+    ) {
+
+        agent_booking_install();
+    }
 }
 function agent_booking_create_tables() {
 
@@ -41,7 +57,7 @@ function agent_booking_create_tables() {
 
         PRIMARY KEY  (id),
 
-        KEY idx_agent_date (
+        UNIQUE KEY idx_agent_date (
             agent_id,
             slot_start_utc
         ),
@@ -155,6 +171,28 @@ function agent_booking_create_tables() {
     dbDelta($sql2);
     dbDelta($sql3);
     dbDelta($sql4);
+
+		$index_exists = $wpdb->get_var(
+				"
+				SHOW INDEX
+				FROM {$table_name}
+				WHERE Key_name = 'uniq_slot'
+				"
+		);
+
+		if (!$index_exists) {
+
+				$wpdb->query(
+						"
+						ALTER TABLE {$table_name}
+
+						ADD UNIQUE KEY uniq_slot (
+								agent_id,
+								slot_start_utc
+						)
+						"
+				);
+		}
 
     update_option(
         'agent_booking_db_version',

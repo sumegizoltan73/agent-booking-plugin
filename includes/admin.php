@@ -24,16 +24,71 @@ function agent_booking_admin_menu() {
 
 function agent_booking_admin_page() {
 
+    $admin_notice = "";
+    if (!class_exists('Groups_User')) {
+        $admin_notice = "Groups plugin required";
+    }
+
+    $users = get_users();
+    $agents = [];
+    foreach ($users as $user) {
+        $group_user = new Groups_User($user->ID);
+        foreach ($group_user->__get('groups') as $group) {
+            if ($group->name == 'booking_agent') {
+                $agents[] = $user;
+                break;
+            }
+        }
+    }
+
     ?>
 
     <div class="wrap">
 
         <h1>Agent Booking</h1>
-
-        <button id="generate-slots">
+        <h2>
+            <?php if ($admin_notice != "") {
+                    echo esc_html($admin_notice);
+                }
+            ?>
+        </h2>
+        <button id="generate-slots" onclick="generateSlots()">
             Slotok generálása
         </button>
 
+        <select id="agent-id" onchange="refreshCalendar()">
+            <option
+                value="0"
+            >
+                Minden ügynök
+            </option>
+            <?php foreach ($agents as $agent): ?>
+
+                <option
+                    value="<?php echo esc_attr($agent->ID); ?>"
+                >
+                    <?php
+                    echo esc_html(
+                        $agent->display_name
+                    );
+                    ?>
+                </option>
+
+            <?php endforeach; ?>
+        </select>
+
+        <select id="agent-calendar-view" onchange="refreshCalendarView()">
+            <option
+                value="timeGridWeek"
+            >
+                Heti nézet
+            </option>
+            <option
+                value="dayGridMonth"
+            >
+                Havi nézet
+            </option>
+        </select>
         <div id="agent-booking-admin-calendar"></div>
 
     </div>
@@ -61,13 +116,40 @@ function agent_booking_admin_assets($hook) {
     );
 
     wp_enqueue_script(
-        'agent-admin-calendar-js',
-        plugin_dir_url(__FILE__) . '../assets/js/admin.js',
+        'fullcalendar-locales',
+        plugin_dir_url(__FILE__) . '../assets/vendor/fullcalendar/locales-all.global.min.js',
+        ['fullcalendar'],
+        '6.1.20',
+        true
+    );
+
+    wp_enqueue_script(
+        'sweetalert2',
+        'https://cdn.jsdelivr.net/npm/sweetalert2@11',
+        [],
+        '11',
+        true
+    );
+
+    wp_enqueue_script(
+        'agent-booking-admin',
+        plugin_dir_url(__FILE__) . '../assets/js/admin.js?nocache=' . date("Ymd_His"),
         ['fullcalendar'],
         filemtime(
             plugin_dir_path(__FILE__) .
             '../assets/js/admin.js'
         ),
         true
+    );
+
+    wp_localize_script(
+        'agent-booking-admin',
+        'agentBooking',
+        [
+            'nonce' => wp_create_nonce('wp_rest'),
+            'restUrl' => rest_url(
+                'agent-booking/v1/'
+            )
+        ]
     );
 }

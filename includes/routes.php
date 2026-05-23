@@ -4,16 +4,55 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-register_rest_route(
-    'agent-booking/v1',
-    '/generate-slots',
-    [
-        'methods' => 'POST',
-        'callback' => 'agent_booking_generate_slots',
-        'permission_callback' => function () {
-            return current_user_can(
-                'manage_options'
-            );
-        }
-    ]
+add_action(
+    'rest_api_init',
+    'agent_booking_register_routes'
 );
+
+function agent_booking_register_routes() {
+
+    register_rest_route(
+        'agent-booking/v1',
+        '/generate-slots',
+        [
+            'methods'  => 'POST',
+
+            'callback' => 'agent_booking_generate_slots',
+
+            'permission_callback' => function () {
+
+                return current_user_can(
+                    'manage_options'
+                );
+            }
+        ]
+    );
+
+    register_rest_route(
+        'agent-booking/v1',
+        '/calendar-events',
+        [
+            'methods'  => 'GET',
+
+            'callback' => 'agent_booking_calendar_events',
+
+        ]
+    );
+    
+    register_rest_route(
+        'agent-booking/v1',
+        '/update-slot-status',
+        [
+            'methods'  => 'POST',
+
+            'callback' => 'agent_booking_update_slot_status',
+
+            'permission_callback' => function () {
+
+                return current_user_can(
+                    'manage_options'
+                );
+            }
+        ]
+    );
+}

@@ -416,7 +416,7 @@ function agent_booking_slot(
         $request->get_json_params();
 
     $id = intval($params['id']);
-    $email = sanitize_text_field(
+    $email = sanitize_email(
             $params['email']
         );
     $name = sanitize_text_field(

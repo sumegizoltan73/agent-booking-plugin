@@ -428,14 +428,20 @@ function agent_booking_slot(
     $notes = sanitize_text_field(
             $params['notes']
         );
-    //$created_id = wp_users.id;
+    $current_user = wp_get_current_user();
+    $created_id = null;
+    $created_id_str = 'NULL';
+    if ($current_user) {
+        $created_id = $current_user->ID;
+        $created_id_str = "{$created_id}";
+    }
 
 
-    $wpdb->query(
+    $result = $wpdb->query(
         "
         INSERT INTO {$table_bookings} 
         (slot_id, customer_email, customer_name, customer_phone, created_by, created_at)
-        SELECT id as slot_id, '{$email}' as customer_email, '{$name}' as customer_name, '{$phone}' as customer_phone, NULL as created_by, NOW() as created_at 
+        SELECT id as slot_id, '{$email}' as customer_email, '{$name}' as customer_name, '{$phone}' as customer_phone, {$created_id_str} as created_by, NOW() as created_at 
         FROM {$table} s
         WHERE s.id = {$id} AND s.status = 'FREE' AND NOT EXISTS (
             SELECT slot_id FROM {$table_bookings} b WHERE b.slot_id = s.id
@@ -443,12 +449,22 @@ function agent_booking_slot(
         "
     );
 
-    if ($notes != "") {
-        $wpdb->query(
-            "
-            
-            "
-        );
+    if ($result === false) {
+
+        error_log($wpdb->last_error);
+
+    } else {
+
+        $booking_id = $wpdb->insert_id;
+        if ($notes != "") {
+            $wpdb->query(
+                "
+                INSERT INTO {$table_notes}
+                (booking_id, author_user_id, note_type, visibility, note, created_at)
+                VALUES ({$booking_id}, {$created_id_str}, 'COSTUMER', 'AGENT', '{$notes}', NOW())
+                "
+            );
+        }
     }
 
     return [

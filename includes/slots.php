@@ -472,3 +472,147 @@ function agent_booking_slot(
         'message' => 'Slot update complet'
     ];
 }
+
+function agent_booking_slot_notes(
+    WP_REST_Request $request
+) {
+    global $wpdb;
+    $table_slots =
+        $wpdb->prefix . 'agent_booking_slots';
+    $table_bookings =
+        $wpdb->prefix . 'agent_booking_bookings';
+    $table_notes =
+        $wpdb->prefix . 'agent_booking_notes';
+    $usertable =
+        $wpdb->prefix . 'users';
+
+    $slot_id = intval(
+        $request->get_param(
+            'slot_id'
+        )
+    );
+
+    $result = $wpdb->get_results(
+        $wpdb->prepare(
+            "
+            SELECT
+                n.note,
+                n.note_type,
+                n.visibility,
+                n.created_at,
+                u.ID as author_user_id,
+                u.display_name,
+                b.customer_name,
+                b.customer_email,
+                b.customer_phone,
+                b.status
+
+            FROM
+                {$table_notes} n
+
+            JOIN
+                {$table_bookings} b
+                ON b.ID = n.booking_id
+            JOIN
+                {$table_slots} s 
+                ON b.slot_id = s.id
+            LEFT JOIN
+                {$usertable} u
+                ON n.author_user_id = u.ID
+
+            WHERE
+                b.slot_id = %d
+
+            ORDER BY
+                n.created_at DESC
+            ",
+            $slot_id
+        )
+    );
+    $notes = [];
+
+    foreach ($result as $row) {
+
+        $notes[] = [
+            'author_monogram' => get_monogram($row->display_name),
+
+            'created_at' => $row->created_at,
+
+            'extendedProps' => [
+                'slot_id' => $slot_id,
+                'note_type' => $row->note_type,
+                'author_name' => $row->display_name,
+                'author_user_id' => $row->author_user_id,
+                'visibility' => $row->visibility,
+                'note' => $row->note
+            ]
+        ];
+    }
+
+    return $notes;
+}
+
+function agent_booking_slot_bookings(
+    WP_REST_Request $request
+) {
+    global $wpdb;
+    $table_slots =
+        $wpdb->prefix . 'agent_booking_slots';
+    $table_bookings =
+        $wpdb->prefix . 'agent_booking_bookings';
+    $usertable =
+        $wpdb->prefix . 'users';
+
+    $slot_id = intval(
+        $request->get_param(
+            'slot_id'
+        )
+    );
+
+    $result = $wpdb->get_results(
+        $wpdb->prepare(
+            "
+            SELECT
+                b.created_at,
+                u.ID as booked_user_id,
+                u.display_name,
+                b.customer_name,
+                b.customer_email,
+                b.customer_phone,
+                b.status
+
+            FROM
+                {$table_bookings} b
+            JOIN
+                {$table_slots} s 
+                ON b.slot_id = s.id
+            LEFT JOIN
+                {$usertable} u
+                ON b.created_by = u.ID
+
+            WHERE
+                b.slot_id = %d
+            ",
+            $slot_id
+        )
+    );
+    $bookings = [];
+
+    foreach ($result as $row) {
+
+        $bookings[] = [
+            'created_at' => $row->created_at,
+
+            'extendedProps' => [
+                'slot_id' => $slot_id,
+                'status' => $row->status,
+                'customer_name' => $row->customer_name,
+                'customer_email' => $row->customer_email,
+                'customer_phone' => $row->customer_phone,
+                'created_by' => $row->display_name
+            ]
+        ];
+    }
+
+    return $bookings;
+}

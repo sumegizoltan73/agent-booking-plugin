@@ -144,6 +144,13 @@ function agent_booking_admin_assets($hook) {
         '3.1'
     );
 
+    wp_enqueue_style(
+        'admin-style',
+        plugin_dir_url(__FILE__) . '../assets/css/admin.css?nocache=' . date("Ymd_His"),
+        [],
+        '0.1.4'
+    );
+
     wp_enqueue_script(
         'agent-booking-admin',
         plugin_dir_url(__FILE__) . '../assets/js/admin.js?nocache=' . date("Ymd_His"),

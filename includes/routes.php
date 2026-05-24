@@ -87,4 +87,24 @@ function agent_booking_register_routes() {
             }
         ]
     );
+
+     register_rest_route(
+        'agent-booking/v1',
+        '/calendar-slot-notes',
+        [
+            'methods'  => 'GET',
+
+            'callback' => 'agent_booking_slot_notes'
+        ]
+    );
+
+     register_rest_route(
+        'agent-booking/v1',
+        '/calendar-slot-bookings',
+        [
+            'methods'  => 'GET',
+
+            'callback' => 'agent_booking_slot_bookings'
+        ]
+    );
 }

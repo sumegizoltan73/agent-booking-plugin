@@ -23,8 +23,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
               successCallback(data);
           },
-          eventClick: function(info) {
+          eventClick: async function(info) {
 
+                let bookednote = "";
+                let buttons = "";
+                let bookings_html = "";
+                if (info.event.extendedProps.status === 'BOOKED') {
+                    const bookings = await getBookings(info.event.extendedProps.slot_id);
+                    bookings_html = '<h3>Foglalás adatai</h3><ul>' + bookings.map((field, index) => {
+                        return `<li>
+                                    Ügyfél neve: ${field.extendedProps.customer_name}
+                                    <br />
+                                    Ügyfél Email: <a href="mailto:${field.extendedProps.customer_email}">${field.extendedProps.customer_email}</a>
+                                    <br />
+                                    Ügyfél Telefon: ${field.extendedProps.customer_phone}
+                                    <br />
+                                    Foglalás időpontja: ${field.created_at}
+                                    <br />
+                                    Státusz: ${field.extendedProps.status}
+                                    <br />
+                                    Bejegyzés készítője: ${field.extendedProps.created_by === null ? "VENDÉG" : field.extendedProps.created_by}
+                                    
+                                </li>`;
+                    }).join('') + '</ul>';
+
+                    const bookednotes = await getNotes(info.event.extendedProps.slot_id);
+                    bookednote = '<h3>Megjegyzések</h3><ul>' + bookednotes.map((field, index) => {
+                        return `<li>
+                                    ${field.extendedProps.note}
+                                </li>`;
+                    }).join('') + '</ul>';
+                }
+                else {
+                    buttons = `
+                        <p>
+                            <button onclick="updateSlot(${info.event.extendedProps.slot_id}, 'BLOCKED')">BLOCK</button>
+                            <span style="margin-left: 20px;">&nbsp;</span>
+                            <button onclick="updateSlot(${info.event.extendedProps.slot_id}, 'FREE')">FREE</button>
+                        </p>
+                    `;
+                }
                 Swal.fire({
 
                     title: 'Slot részletek',
@@ -41,11 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             Status:
                             ${info.event.extendedProps.status}
                         </p>
-                        <p>
-                            <button onclick="updateSlot(${info.event.extendedProps.slot_id}, 'BLOCKED')">BLOCK</button>
-                            <span style="margin-left: 20px;">&nbsp;</span>
-                            <button onclick="updateSlot(${info.event.extendedProps.slot_id}, 'FREE')">FREE</button>
-                        </p>
+                        ${bookings_html}
+                        ${bookednote}
+                        ${buttons}
                     `
                 });
             }
@@ -53,6 +89,24 @@ document.addEventListener('DOMContentLoaded', function() {
         calendar.render();
         window.agentBookingCalendar = calendar;
       });
+
+async function getNotes(slot_id) {
+    const response = await fetch(
+        agentBooking.restUrl + 'calendar-slot-notes?slot_id=' + slot_id
+    );
+
+    const data = await response.json();
+    return data;
+} 
+
+async function getBookings(slot_id) {
+    const response = await fetch(
+        agentBooking.restUrl + 'calendar-slot-bookings?slot_id=' + slot_id
+    );
+
+    const data = await response.json();
+    return data;
+} 
 
 async function generateSlots() {
     const url = agentBooking.restUrl + 'generate-slots';
